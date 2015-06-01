@@ -58,6 +58,9 @@ instance Monoid a => Monoid (Discrete a) where
 compressD :: Ord a => Discrete a -> Discrete a
 compressD (Discr xs) = Discr $ compr xs
 
+compressSortDesc :: Ord a => Discrete a -> Discrete a
+compressSortDesc = sortDescendingProb . compressD
+
 -- cov (X,Y) = E[(X-E(X))*(Y-E(Y))]
 covarianceByDef :: Fractional a => Discrete (a,a) -> a
 -- covarianceByDef :: ( Fractional a, Fractional b) => Discrete (a,b) -> a
