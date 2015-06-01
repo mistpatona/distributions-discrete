@@ -38,10 +38,13 @@ instance Functor Discrete where
  fmap f (Discr xs) = Discr $ map g xs
      where g (p,q) = (f p,q)
 
+instance Applicative Discrete where
+        pure x = uniformD [x]
+
 instance Monad Discrete where
-	return x = uniformD [x]
+	-- return = pure -- x = uniformD [x]
         Discr xs >>= f = Discr $ [ (y,p*q)  | (x,p) <- xs, (y,q) <- (unDiscr.f) x ]
-            
+
 
 compressD :: Ord a => Discrete a -> Discrete a
 compressD (Discr xs) = Discr $ compr xs
@@ -56,7 +59,7 @@ covarianceByDef d = estimation $ transform (\(x,y) -> (x-ex)*(y-ey) ) d
 
 -- cov (X,Y) = E(X*Y) - E(X)*E(Y)
 covarianceByFormula :: Fractional a => Discrete (a,a) -> a
-covarianceByFormula d = et (\(x,y) -> x*y ) - et fst * et snd 
+covarianceByFormula d = et (\(x,y) -> x*y ) - et fst * et snd
       where et f = estimation $ transform f d
 
 covariance = covarianceByDef
@@ -76,12 +79,12 @@ instance Sqrtable Float where
 --  -1 <= rho <= 1
 --correlation :: Floating a => Discrete (a,a) -> Double
 --correlation :: (Floating a, Floating b) => Discrete (a,a) -> b
-correlation :: (Fractional a, Sqrtable a) => Discrete (a,a) -> a
-correlation d = if (vx * vy == 0) then 0
-                                  else covariance d / fr -- / (realToFrac $ sqrt (vx * vy) )
+correlation2 :: (Fractional a, Sqrtable a) => Discrete (a,a) -> a
+correlation2 d = if (vx * vy == 0) then 0
+                                  else sqr(covariance d) / (vx * vy)
      where vx = variance $ transform fst d
            vy = variance $ transform snd d
-           fr = sqrt2 (vx * vy)
+           sqr = (\x -> x*x)
 
 
 
@@ -122,7 +125,7 @@ normalizeTo1 xs = map (*k) xs
 compr :: (Ord a, Num b) => [(a,b)] -> [(a,b)]
 -- compactify equal items (and sort)
 compr = compr' . sortBy (comparing fst)
-   where 
+   where
          eq' :: Ord a => (a,b) -> (a,b) -> Bool
          eq' (p,_) (q,_) = (p == q)
          add' (p,m1) (q,m2) = (p,m1+m2)
@@ -131,8 +134,7 @@ compr = compr' . sortBy (comparing fst)
          compr' (x:y:xs) = if (eq' x y) then (compr'(add' x y : xs)) else (x : compr' (y:xs))
          compr'' = filter ((/=0.0).snd) -- throw away zero components
 
---sqrt' :: (Fractional a, Fractional b) => a -> b
---sqrt' x = realToFrac $ sqrt (x * 1.0 :: Double )
+
 
 -- examples:
 -- estimation $ liftM2 (*) (normal3Sigma [1.0..5] )  (normal3Sigma [1.0..7]) == 4.00
