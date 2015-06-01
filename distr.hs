@@ -40,9 +40,10 @@ instance Functor Discrete where
 
 instance Applicative Discrete where
         pure x = uniformD [x]
+        (<*>) = undefined  -- TODO: define from "bind"
 
 instance Monad Discrete where
-	-- return = pure -- x = uniformD [x]
+        -- return = pure -- x = uniformD [x]
         Discr xs >>= f = Discr $ [ (y,p*q)  | (x,p) <- xs, (y,q) <- (unDiscr.f) x ]
 
 
@@ -79,13 +80,15 @@ instance Sqrtable Float where
 --  -1 <= rho <= 1
 --correlation :: Floating a => Discrete (a,a) -> Double
 --correlation :: (Floating a, Floating b) => Discrete (a,a) -> b
-correlation2 :: (Fractional a, Sqrtable a) => Discrete (a,a) -> a
-correlation2 d = if (vx * vy == 0) then 0
-                                  else sqr(covariance d) / (vx * vy)
+{-
+correlation2 :: (Fractional a) => Discrete (a,a) -> a
+correlation2 d = if ((vx == 0) || (vy == 0))
+                   then 0
+                   else {-sqr-}(covariance d) / (vx * vy)
      where vx = variance $ transform fst d
            vy = variance $ transform snd d
            sqr = (\x -> x*x)
-
+-}	
 
 
 
