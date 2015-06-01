@@ -12,7 +12,9 @@ module DiscrDistr(
 
     compressD,compressSortDesc,
     sortDescendingProb,
-    reNormalize
+    reNormalize,
+
+    softMax
 
                  ) where
 
@@ -114,6 +116,9 @@ correlation2 d = if ((vx == 0) || (vy == 0))
            vy = variance $ transform snd d
            sqr = (\x -> x*x)
 
+softMax :: RealFloat a => [a] -> [a]
+softMax xs = map (/sum ys) ys
+    where ys = map exp xs
 
 -- -----------------------------------
 -- helper functions below

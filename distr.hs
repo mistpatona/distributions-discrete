@@ -99,6 +99,9 @@ singleStep x = uniformD $ map (x+) [(-1),0,1]
 
 
 
+softMax :: RealFloat a => [a] -> [a]
+softMax xs = map (/sum ys) ys
+    where ys = map exp xs
 
 
 
