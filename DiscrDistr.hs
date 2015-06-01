@@ -1,13 +1,17 @@
 module DiscrDistr(
     Discrete(..),
     unDiscr,
-    sortDescendingProb,
+    transform,
+
     uniformD,
     normalWithStddev,
     normal1Sigma,normal2Sigma,normal3Sigma,
+
     estimation,variance,estimVar,
     covariance,correlation2,
+
     compressD,compressSortDesc,
+    sortDescendingProb,
     reNormalize
 
                  ) where
@@ -16,6 +20,7 @@ import Data.Ord (comparing)
 import Data.List (sortBy)
 import Data.Monoid
 
+-- | Discrete distribution
 data Discrete a = Discr [(a,Float)] deriving (Show)
 
 unDiscr (Discr xs) = xs
@@ -23,9 +28,12 @@ unDiscr (Discr xs) = xs
 sortedDiscr :: Discrete a -> [(a,Float)]
 sortedDiscr = reverse . sortBy (comparing snd) . unDiscr
 
+-- | to push back less probable outcomes,
+--   in a hope they sometimes will not be reached because of laziness
 sortDescendingProb :: Discrete a -> Discrete a
 sortDescendingProb = Discr . sortedDiscr
 
+-- | uniform distribution between multiple outcomes
 uniformD :: [a] -> Discrete a
 uniformD [] = Discr []
 uniformD xs  = Discr $ zip xs (repeat p)
@@ -43,7 +51,8 @@ estimVar :: Fractional a => Discrete a -> (a,a)
 estimVar d = (estimation d,variance d)
 
 estimation :: Fractional a => Discrete a -> a
-estimation (Discr xs) = (sum $ map (\(p,q) -> p*realToFrac q) xs ) * recip ( realToFrac $ sum $ map snd xs)
+estimation (Discr xs) =
+   (sum $ map (\(p,q) -> p*realToFrac q) xs ) / ( realToFrac $ sum $ map snd xs)
 
 variance :: Fractional a => Discrete a -> a
 variance d = estimation $ transform (\x -> square (e-x)) d
@@ -81,7 +90,6 @@ reNormalize (Discr xs) = Discr $ zip vs (normalizeTo1 ps)
 
 -- cov (X,Y) = E[(X-E(X))*(Y-E(Y))]
 covarianceByDef :: Fractional a => Discrete (a,a) -> a
--- covarianceByDef :: ( Fractional a, Fractional b) => Discrete (a,b) -> a
 covarianceByDef d = estimation $ transform (\(x,y) -> (x-ex)*(y-ey) ) d
       where ex = et fst -- estimation $ transform fst d
             ey = et snd -- estimation $ transform snd d
@@ -105,17 +113,6 @@ correlation2 d = if ((vx == 0) || (vy == 0))
      where vx = variance $ transform fst d
            vy = variance $ transform snd d
            sqr = (\x -> x*x)
-
--- -----------------------------------
-
-singleStep :: Num a => a  -> Discrete a
-singleStep x = uniformD $ map (x+) [(-1),0,1]
-
-
-
-
-
-
 
 
 -- -----------------------------------
