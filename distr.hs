@@ -1,11 +1,16 @@
 import Data.Ord (comparing)
 import Data.List (sortBy)
+import Data.Monoid
 
 data Discrete a = Discr [(a,Float)] deriving (Show)
 
 unDiscr (Discr xs) = xs
+
 sortedDiscr :: Discrete a -> [(a,Float)]
 sortedDiscr = reverse . sortBy (comparing snd) . unDiscr
+
+sortDescendingProb :: Discrete a -> Discrete a
+sortDescendingProb = Discr . sortedDiscr
 
 uniformD :: [a] -> Discrete a
 uniformD [] = Discr []
@@ -35,17 +40,20 @@ transform :: (a->b) -> Discrete a -> Discrete b
 transform = fmap
 
 instance Functor Discrete where
- fmap f (Discr xs) = Discr $ map g xs
-     where g (p,q) = (f p,q)
+    fmap f (Discr xs) = Discr $ map g xs
+        where g (p,q) = (f p,q)
 
 instance Applicative Discrete where
-        pure x = uniformD [x]
-        (<*>) = undefined  -- TODO: define from "bind"
+    pure x = uniformD [x]
+    Discr fs <*> Discr xs = Discr $ [ (f x,p*q) | (f,p) <-fs, (x,q) <-xs ]
 
 instance Monad Discrete where
-        -- return = pure -- x = uniformD [x]
-        Discr xs >>= f = Discr $ [ (y,p*q)  | (x,p) <- xs, (y,q) <- (unDiscr.f) x ]
+    -- return = pure -- x = uniformD [x]
+    Discr xs >>= f = Discr $ [ (y,p*q)  | (x,p) <- xs, (y,q) <- (unDiscr.f) x ]
 
+instance Monoid a => Monoid (Discrete a) where
+    mempty = uniformD [mempty]
+    Discr xs `mappend` Discr ys = Discr [ (x `mappend` y,p*q) | (x,p) <- xs, (y,q) <- ys ]
 
 compressD :: Ord a => Discrete a -> Discrete a
 compressD (Discr xs) = Discr $ compr xs
@@ -63,35 +71,19 @@ covarianceByFormula :: Fractional a => Discrete (a,a) -> a
 covarianceByFormula d = et (\(x,y) -> x*y ) - et fst * et snd
       where et f = estimation $ transform f d
 
+covariance :: Fractional a => Discrete (a,a) -> a
 covariance = covarianceByDef
-
-
-class Sqrtable a where
- sqrt2 :: a -> a
-
-instance Sqrtable Double where
-  sqrt2 x = sqrt x
-
-instance Sqrtable Float where
-  sqrt2 x = sqrt x
-
 
 -- correlation: rho(X,Y) = cov(X,Y)/sqrt(V(X)*V(Y))
 --  -1 <= rho <= 1
---correlation :: Floating a => Discrete (a,a) -> Double
---correlation :: (Floating a, Floating b) => Discrete (a,a) -> b
-{-
-correlation2 :: (Fractional a) => Discrete (a,a) -> a
+
+correlation2 :: (Eq a, Fractional a) => Discrete (a,a) -> a
 correlation2 d = if ((vx == 0) || (vy == 0))
                    then 0
-                   else {-sqr-}(covariance d) / (vx * vy)
+                   else sqr(covariance d) / (vx * vy)
      where vx = variance $ transform fst d
            vy = variance $ transform snd d
            sqr = (\x -> x*x)
--}	
-
-
-
 
 -- -----------------------------------
 
