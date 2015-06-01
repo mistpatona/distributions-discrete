@@ -1,3 +1,17 @@
+module DiscrDistr(
+    Discrete(..),
+    unDiscr,
+    sortDescendingProb,
+    uniformD,
+    normalWithStddev,
+    normal1Sigma,normal2Sigma,normal3Sigma,
+    estimation,variance,estimVar,
+    covariance,correlation2,
+    compressD,compressSortDesc,
+    reNormalize
+
+                 ) where
+
 import Data.Ord (comparing)
 import Data.List (sortBy)
 import Data.Monoid
